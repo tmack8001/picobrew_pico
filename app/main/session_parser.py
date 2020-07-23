@@ -1,10 +1,11 @@
 import json
 
-from .config import brew_active_sessions_path
-from .model import PicoBrewSession
+from .config import brew_active_sessions_path, still_active_sessions_path
+from .model import PicoBrewSession, PicoStillSession
 
 active_brew_sessions = {}
 active_ferm_sessions = {}
+active_still_sessions = {}
 
 
 def load_brew_session(file):
@@ -45,6 +46,17 @@ def load_brew_session(file):
     if len(json_data) > 0 and 'recovery' in json_data[-1]:
         session.update({'recovery': json_data[-1]['recovery']})
     return (session)
+
+
+def load_still_session(file):
+    still_session = load_brew_session(file)
+    
+    # 1 = UID = {brewingUid}-{stillUid}
+    uid_parts = still_session['uid'].split('-')
+    still_session['brewing_alias'] = '' if uid_parts[0] not in active_brew_sessions else active_brew_sessions[uid_parts[0]].alias
+    still_session['alias'] = '' if uid_parts[1] not in active_still_sessions else active_still_sessions[uid_parts[1]].alias
+    
+    return still_session
 
 
 def get_brew_graph_data(chart_id, session_name, session_step, session_data, is_pico=None):
@@ -191,3 +203,39 @@ def restore_active_sessions():
             session.is_pico = brew_session['is_pico']
             session.data = brew_session['data']
             active_brew_sessions[brew_session['uid']] = session
+
+    if active_still_sessions == {}:
+        # print('DEBUG: restore_active_sessions() fetching abandoned server active sessions')
+
+        active_still_session_files = list(still_active_sessions_path().glob("*.json"))
+        for file in active_still_session_files:
+            # print('DEBUG: restore_active_sessions() found {} as an active session'.format(file))
+            still_session = load_still_session(file)
+            # print('DEBUG: restore_active_sessions() {}'.format(brew_session))
+            
+            session = PicoStillSession()
+            session.file = open(file, 'a')
+            session.file.flush()
+            session.filepath = file
+            session.uid = still_session['uid']
+            session.alias = still_session['alias']
+            session.brewing_alias = still_session['brewing_alias']
+            session.created_at = still_session['date']
+            session.name = still_session['name']
+            session.type = still_session['type']
+            session.session = still_session['session']           # session guid
+            session.id = -1                                      # session id (integer)
+
+            if 'recovery' in still_session:
+                session.recovery = still_session['recovery']     # find last step name
+
+            # session.remaining_time = None
+            session.is_pico = still_session['is_pico']
+            session.data = still_session['data']
+
+            print(session)
+            print(session.still_uid())
+            if session.still_uid() not in active_still_sessions:
+                active_still_sessions[session.still_uid()] = []
+
+            active_still_sessions[session.still_uid()] = session

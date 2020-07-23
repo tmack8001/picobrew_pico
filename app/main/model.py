@@ -94,3 +94,17 @@ class PicoFermSession():
         self.voltage = '-'
         self.start_time = None
         self.data = []
+
+
+class PicoStillSession(PicoBrewSession):
+    def __init__(self):
+        super(PicoStillSession, self).__init__()
+        self.name = 'Waiting To Distill'
+        self.still_alias = ''
+        self.brewing_alias = ''
+
+    def still_uid(self):
+        return self.uid.split('-')[1]
+
+    def brewing_uid(self):
+        return self.uid.split('-')[0]

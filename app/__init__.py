@@ -24,9 +24,9 @@ def create_app(debug=False):
 
     # these imports required to be after socketio initialization
     from .main.config import MachineType
-    from .main.model import PicoFermSession, PicoBrewSession
+    from .main.model import PicoFermSession, PicoBrewSession, PicoStillSession
     from .main.routes_frontend import initialize_data
-    from .main.session_parser import restore_active_sessions, active_brew_sessions, active_ferm_sessions
+    from .main.session_parser import restore_active_sessions, active_brew_sessions, active_ferm_sessions, active_still_sessions
 
     from .main import main as main_blueprint
 
@@ -64,6 +64,7 @@ def create_app(debug=False):
     with app.app_context():
         restore_active_sessions()
         initialize_data()
+    
     if 'aliases' in server_cfg:
         machine_types = [MachineType.ZSERIES, MachineType.ZYMATIC, MachineType.PICOBREW, MachineType.PICOFERM, MachineType.PICOSTILL]
         for mtype in machine_types:
@@ -71,7 +72,10 @@ def create_app(debug=False):
             if mtype in aliases and aliases[mtype] is not None:
                 for uid in aliases[mtype]:
                     if uid in aliases[mtype] and uid != "uid":
-                        if mtype == MachineType.PICOFERM:
+                        if mtype == MachineType.PICOSTILL:
+                            active_still_sessions[uid] = PicoStillSession()
+                            active_still_sessions[uid].alias = aliases[mtype][uid]
+                        elif mtype == MachineType.PICOFERM:
                             active_ferm_sessions[uid] = PicoFermSession()
                             active_ferm_sessions[uid].alias = aliases[mtype][uid]
                         else:

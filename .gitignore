@@ -11,6 +11,8 @@ app/sessions/brew/active/*
 app/sessions/brew/archive/*
 app/sessions/ferm/active/*
 app/sessions/ferm/archive/*
+app/sessions/still/active/*
+app/sessions/still/archive/*
 
 # terraform
 terraform/.terraform

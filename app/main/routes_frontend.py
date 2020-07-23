@@ -9,15 +9,15 @@ from time import sleep
 
 from . import main
 from .recipe_parser import PicoBrewRecipe, PicoBrewRecipeImport, ZymaticRecipe, ZymaticRecipeImport, ZSeriesRecipe
-from .session_parser import load_ferm_session, get_ferm_graph_data, get_brew_graph_data, load_brew_session, active_brew_sessions, active_ferm_sessions
-from .config import base_path, zymatic_recipe_path, zseries_recipe_path, pico_recipe_path, ferm_archive_sessions_path, brew_archive_sessions_path
+from .session_parser import load_ferm_session, get_ferm_graph_data, get_brew_graph_data, load_brew_session, active_brew_sessions, active_ferm_sessions, active_still_sessions
+from .config import base_path, zymatic_recipe_path, zseries_recipe_path, pico_recipe_path, ferm_archive_sessions_path, brew_archive_sessions_path, still_active_sessions_path, still_archive_sessions_path
 
 
 # -------- Routes --------
 @main.route('/')
 def index():
     return render_template('index.html', brew_sessions=load_active_brew_sessions(),
-                           ferm_sessions=load_active_ferm_sessions())
+                           ferm_sessions=load_active_ferm_sessions(), still_sessions=load_active_still_sessions())
 
 
 @main.route('/restart_server')
@@ -56,6 +56,11 @@ def brew_history():
 @main.route('/ferm_history')
 def ferm_history():
     return render_template('ferm_history.html', sessions=load_ferm_sessions())
+
+
+@main.route('/still_history')
+def still_history():
+    return render_template('still_history.html', sessions=load_still_sessions())
 
 
 @main.route('/zymatic_recipes')
@@ -326,6 +331,38 @@ def load_brew_sessions(uid=None):
     return brew_sessions
 
 
+def load_active_still_sessions():
+    still_sessions = []
+
+    print('load still sessions')
+    print(active_still_sessions)
+
+    # process still_sessions from memory
+    for uid in active_still_sessions:
+        print('DEBUG: found {}'.format(len(active_still_sessions)))
+        session = active_still_sessions[uid]
+        still_sessions.append({
+                                'alias': session.alias,
+                                'brewing_alias': session.brewing_alias,
+                                'graph': get_brew_graph_data(uid, session.name,
+                                                           session.step,
+                                                           session.data,
+                                                           session.is_pico)})
+    return still_sessions
+
+
+def load_still_sessions(uid=None):
+    files = []
+    if uid:
+        files = list(still_archive_sessions_path().glob("*#{}*.json".format(uid)))
+    else:
+        files = list(still_archive_sessions_path().glob("*.json"))
+
+    # still sessions are extension to brew session (logs same data just links a picostill)
+    still_sessions = [load_brew_session(file) for file in files]
+    return still_sessions
+
+
 def load_active_ferm_sessions():
     ferm_sessions = []
     for uid in active_ferm_sessions:
@@ -349,7 +386,7 @@ zseries_recipes = []
 
 def initialize_data():
     global pico_recipes, zymatic_recipes, zseries_recipes
-    global brew_sessions
+    global brew_sessions, ferm_sessions, still_sessions
 
     # Read initial recipe list on load
     pico_recipes = load_pico_recipes()
@@ -358,8 +395,8 @@ def initialize_data():
 
     # load all archive brew sessions
     brew_sessions = load_active_brew_sessions()
-
-    # todo: if anything in ferm/active folder, load data in since the server probably crashed?
+    ferm_sessions = load_active_ferm_sessions()
+    still_sessions = load_active_still_sessions()
 
 
 # utilities

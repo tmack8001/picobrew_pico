@@ -61,3 +61,11 @@ def ferm_active_sessions_path():
 
 def ferm_archive_sessions_path():
     return current_app.config['SESSIONS_PATH'].joinpath('ferm/archive')
+
+
+def still_active_sessions_path():
+    return current_app.config['SESSIONS_PATH'].joinpath('still/active')
+
+
+def still_archive_sessions_path():
+    return current_app.config['SESSIONS_PATH'].joinpath('still/archive')
