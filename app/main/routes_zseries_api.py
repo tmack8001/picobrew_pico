@@ -48,6 +48,13 @@ class ZProgramId(int, Enum):
     CHILL = 27
 
 
+class RecipeKind(int, Enum):
+    USER = 1
+    UNBREWED_PAK = 2
+    ZPAK = 3
+    UNKNOWN = 4
+
+
 def convertTemp(temp: float, units: str):
     if units.upper() == 'F':
         return (temp * 9/5) + 32  # convert celcius to fahrenheit

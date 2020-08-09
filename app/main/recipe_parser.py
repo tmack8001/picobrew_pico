@@ -149,6 +149,7 @@ class ZSeriesRecipe():
         r['ID'] = self.id
         r['Name'] = self.name
         r['StartWater'] = self.start_water
+        r['TypeCode'] = self.type_code
         r['Steps'] = []
         for step in self.steps:
             r['Steps'].append(step.serialize())
