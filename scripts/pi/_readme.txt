@@ -19,14 +19,16 @@ export TIMEZONE_DEFAULT=America/New_York
 export FIRST_USER_NAME=pi
 export FIRST_USER_PASS=raspberry
 export ENABLE_SSH=1
+export STAGE_LIST=stage0 stage1 stage2 stage3 stage4
 EOF
 
-# Rasbian Lite (no NOOBS)
-touch ./stage3/SKIP ./stage4/SKIP ./stage5/SKIP
-touch ./stage4/SKIP_IMAGES ./stage5/SKIP_IMAGES
-rm -f stage2/EXPORT_NOOBS
+# Skip build for Rasbian Full Images
+touch ./stage5/SKIP ./stage5/SKIP_IMAGES
 
-#Stage Picobrew Server area
+# Remove NOOBS
+rm -f ./stage2/EXPORT_NOOBS
+
+# Stage Picobrew Server
 rm -rf stage2/99-picobrewserver-setup
 mkdir -p stage2/99-picobrewserver-setup
-#cp <Picobrewserver Root>/picobrew_pico/scripts/pi/00-run-chroot.sh stage2/99-picobrewserver-setup/
+# cp <Picobrewserver Root>/picobrew_pico/scripts/pi/00-run-chroot.sh stage2/99-picobrewserver-setup
