@@ -14,7 +14,7 @@ from .config import MachineType, brew_active_sessions_path, zseries_firmware_pat
 from .firmware import firmware_filename, firmware_upgrade_required, minimum_firmware
 from .model import PicoBrewSession
 from .routes_frontend import get_zseries_recipes, load_brew_sessions
-from .session_parser import active_brew_sessions
+from .session_parser import active_brew_sessions, reason_phrase
 from .units import convert_temp
 
 
@@ -496,7 +496,7 @@ def update_session_log(token, body):
         'position': body['ValvePosition'],
         'drainPumpOn': body.get('DrainPumpOn', 0) == 1, # integer into boolean
         'kegPumpOn': body.get('KegPumpOn', 0) == 1,     # integer into boolean
-        'errorCode': body.get('ErrorCode'),
+        'errorCode': body.get('ErrorCode'),             # integer (4 == Overheat - too hot; 6 == Overheat - Max HEX Wort Delta; 12 == PicoStill Error)
         'pauseReason': body.get('PauseReason'),         # integer (1 == waiting for user / finished / program)
         # debug wifi information
         'network': {
@@ -523,7 +523,10 @@ def update_session_log(token, body):
         if len(plot_bands) == 0:
             plot_bands.append({
                 'from': session_data.get('time'),
-                'to': None
+                'to': None,
+                'label': {
+                    'text': reason_phrase(session_data.get('errorCode', 0), session_data.get('pauseReason', 0))
+                }
             })
             session_data.update({'plot_bands': plot_bands})
     elif len(plot_bands) > 0:
