@@ -78,8 +78,10 @@ def load_brew_session(file):
         'type': session_type,
         'alias': alias,
         'data': json_data,
+        'remaining_time': None if len(json_data) == 0 else json_data[-1].get('timeLeft', None),
         'graph': get_brew_graph_data(chart_id, name, step, json_data)
     }
+
     if len(json_data) > 0 and 'recovery' in json_data[-1]:
         session.update({'recovery': json_data[-1]['recovery']})
     return (session)
@@ -267,6 +269,7 @@ def restore_active_brew_sessions():
             session.type = brew_session['type']
             session.session = brew_session['session']                   # session guid
             session.id = -1                                             # session id (integer)
+            session.remaining_time = brew_session['remaining_time']
 
             if 'recovery' in brew_session:
                 session.recovery = brew_session['recovery']             # find last step name

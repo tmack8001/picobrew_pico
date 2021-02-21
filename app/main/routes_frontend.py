@@ -505,7 +505,10 @@ def load_active_brew_sessions():
     # process brew_sessions from memory
     for uid in active_brew_sessions:
         brew_sessions.append({'alias': active_brew_sessions[uid].alias,
+                              'uid': uid,
                               'active': active_brew_sessions[uid].name != 'Waiting To Brew',
+                              'remaining_time': active_brew_sessions[uid].remaining_time,
+                              'date': active_brew_sessions[uid].created_at,
                               'machine_type': active_brew_sessions[uid].machine_type,
                               'graph': get_brew_graph_data(uid, active_brew_sessions[uid].name,
                                                            active_brew_sessions[uid].step,

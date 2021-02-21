@@ -30,6 +30,31 @@
       </h5>
       <div id="c_{{chart_id}}" class="collapse {{show}}" aria-labelledby="h_{{chart_id}}">
         <div class="card-body">
+          <div id="d_{{chart_id}}" class="text-white">
+            <div class="row">
+              <div class="col-sm">
+                <div class="text-white-50">Machine</div>
+                <div>{% if brew_session.alias is defined and brew_session.alias|length %}{{brew_session.alias}} ({{brew_session.uid}}){% else %}{{brew_session.uid}}{% endif %}</div>
+              </div>
+              <div class="col-sm">
+                <div class="text-white-50">Time Remaining</div>
+                {% if brew_session.remaining_time %}
+                  <!-- 500 min -> 8 hr 20 min -->
+                  {% set time = (brew_session.remaining_time | int) | int %}
+                  {% set hours = (time / 60) | int %}
+                  {% set minutes = (time % 60) | int %}
+                  <div>{{'%02d' % hours}}:{{'%02d' % minutes}}</div>
+                {% endif %}
+              </div>
+              <div class="col-sm">
+                <div class="text-white-50">Date Started</div>
+                {% if brew_session.date %}
+                  <div>{{brew_session.date.strftime('%A, %b %e %Y %H:%M:%S')}}</div>
+                {% endif %}
+              </div>
+            </div>
+            <div class="row">&nbsp;</div>
+          </div>
           <div id="{{chart_id}}" style="min-width: 320px; height: 400px; margin: 0 auto"></div>
           <script>var graph_data={{brew_session.graph|tojson}};</script>
           <script src="/static/js/brew_graph_socketio.js"></script>
