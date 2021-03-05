@@ -22,6 +22,7 @@ arg_parser = FlaskParser()
 seed(1)
 
 events = {}
+plot_bands = {}
 
 
 class SessionType(int, Enum):
@@ -169,23 +170,24 @@ def process_zstate(args):
     uid = request.args['token']
     if uid not in active_brew_sessions:
         active_brew_sessions[uid] = PicoBrewSession(MachineType.ZSERIES)
-    
+
     json = request.json
     update_required = firmware_upgrade_required(MachineType.ZSERIES, json['CurrentFirmware'])
     firmware_source = "https://picobrew.com/firmware/zseries/{}".format(firmware_filename(MachineType.ZSERIES, minimum_firmware(MachineType.ZSERIES)))
-    
+
     returnVal = {
         "Alias": zseries_alias(uid),
         "BoilerType": json.get('BoilerType', None),       # TODO sometimes machine loses boilertype, need to resync with known state
-        "IsRegistered": True,                   # likely we don't care about registration with BYOS
+        "IsRegistered": True,
         "IsUpdated": False if update_required else True,
-        "ProgramUri": None,                     # what is this?
-        "RegistrationToken": -1,
+        "ProgramUri": None,                               # what is this?
+        "RegistrationToken": "-1",
         "SessionStats": {
             "DirtySessionsSinceClean": dirty_sessions_since_clean(uid),
             "LastSessionType": last_session_type(uid),
             "ResumableSessionID": resumable_session_id(uid)
         },
+        "TokenExpired": False,
         "UpdateAddress": firmware_source if update_required else "-1",
         "UpdateToFirmware": None,
         "ZBackendError": 0
@@ -518,25 +520,25 @@ def update_session_log(token, body):
     active_session.recovery = body['StepName']
     active_session.remaining_time = body['SecondsRemaining']
 
-    plot_bands = []
-    if plot_band in active_session:
-        plot_bands = active_session.plot_band
+    session_plot_bands = []
+    if active_session not in plot_bands:
+        plot_bands[active_session] = []
+    session_plot_bands = plot_bands[active_session]
 
     error_code = session_data.get('pauseReason', 0)
     pause_reason = session_data.get('errorCode', 0)
     if pause_reason != 0 or error_code != 0:
-        if len(plot_bands) == 0:
-            plot_bands.append({
+        # either no existing plot_bands or prior plot_band marked closed
+        if len(session_plot_bands) == 0 or session_plot_bands[-1]['to'] != None:
+            session_plot_bands.append({
                 'from': session_data.get('time'),
                 'to': None,
                 'label': {
                     'text': reason_phrase(error_code, pause_reason)
                 }
             })
-            session_data.update({'plot_bands': plot_bands})
-    elif len(plot_bands) > 0:
-        plot_bands[-1].to = session_data.get('time')
-        session_data.update({'plot_bands': plot_bands})
+        elif len(session_plot_bands) > 0:
+            session_plot_bands[-1]['to'] = session_data.get('time')
 
     # for Z graphs we have more data available: wort, hex/therm, target, drain, ambient
     graph_update = json.dumps({'time': session_data['time'],
@@ -544,7 +546,7 @@ def update_session_log(token, body):
                                'session': active_session.name,
                                'step': active_session.step,
                                'event': event,
-                               'plotBand': plot_bands[-1] if len(plot_bands) > 0 else {}
+                               'plotBand': session_plot_bands[-1] if len(session_plot_bands) > 0 else {}
                                })
     socketio.emit('brew_session_update|{}'.format(token), graph_update)
     active_session.file.write('\n\t{},'.format(json.dumps(session_data)))
